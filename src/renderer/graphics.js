@@ -1,6 +1,7 @@
-// ============================================
-// Graphics Engine (World + Player + Bots + Fight)
-// ============================================
+// ==================================================
+// GRAPHICS ENGINE (FULL GAME CORE)
+// Player + Bots + Shooting + Physics + HUD + Score
+// ==================================================
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
 
@@ -8,13 +9,23 @@ import { PlayerMovement } from "../player/movement.js";
 import { Shooting } from "../player/shooting.js";
 import { BotManager } from "../bots/botManager.js";
 
+import { Gravity } from "../engine/physics/gravity.js";
+import { PlayerHealth } from "../ui/playerHealth.js";
+import { HUD } from "../ui/hud.js";
+
+import { ScoreManager } from "../engine/scoreManager.js";
+import { PauseMenu } from "../ui/menuPause.js";
+
 export class Graphics {
 
     constructor() {
+        this.clock = new THREE.Clock();
+
         this.initScene();
         this.createWorld();
         this.initPlayer();
         this.initBots();
+        this.initSystems();
     }
 
     // ================= SCENE =================
@@ -35,8 +46,8 @@ export class Graphics {
 
         document.body.appendChild(this.renderer.domElement);
 
-        const sun = new THREE.DirectionalLight(0xffffff, 1.3);
-        sun.position.set(10, 30, 10);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        sun.position.set(20, 40, 20);
 
         this.scene.add(sun);
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
@@ -53,7 +64,6 @@ export class Graphics {
         );
 
         floor.rotation.x = -Math.PI / 2;
-
         this.scene.add(floor);
     }
 
@@ -69,7 +79,11 @@ export class Graphics {
         this.scene.add(this.playerMesh);
 
         this.playerMovement = new PlayerMovement(this.camera, this.playerMesh);
+        this.gravity = new Gravity(this.playerMesh);
+
         this.shooting = new Shooting(this.scene, this.camera);
+
+        this.playerHealth = new PlayerHealth(100);
     }
 
     // ================= BOTS =================
@@ -78,15 +92,33 @@ export class Graphics {
         this.bots = new BotManager(this.scene, this.playerMesh);
     }
 
-    // ================= LOOP =================
+    // ================= SYSTEMS =================
+
+    initSystems() {
+        this.score = new ScoreManager();
+        this.hud = new HUD(this.playerHealth, this.score);
+        this.pauseMenu = new PauseMenu();
+    }
+
+    // ================= UPDATE =================
 
     update(delta) {
+
+        if (this.pauseMenu.paused) return;
+
         this.playerMovement.update(delta);
+        this.gravity.update(delta);
         this.shooting.update(delta);
         this.bots.update(delta);
 
-        // collisions balles ↔ bots
-        this.bots.checkHits(this.shooting.bullets.bullets);
+        // collisions
+        const kills = this.bots.checkHits(this.shooting.bullets.bullets);
+
+        if (kills > 0) {
+            this.score.add(kills);
+        }
+
+        this.hud.update();
     }
 
     render() {
