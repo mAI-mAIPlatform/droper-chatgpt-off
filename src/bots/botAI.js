@@ -1,32 +1,60 @@
-// ===============================
-// Simple Bot AI (follow player)
-// ===============================
+// ============================================
+// Bot AI (movement + health + death)
+// ============================================
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+import { HealthSystem } from "./healthSystem.js";
 
 export class BotAI {
 
-    constructor(mesh, player) {
+    constructor(mesh, player, scene) {
         this.mesh = mesh;
         this.player = player;
+        this.scene = scene;
 
         this.speed = 3 + Math.random() * 2;
+        this.health = new HealthSystem(100);
+
+        this.alive = true;
     }
 
+    // ===============================
+    // DAMAGE
+    // ===============================
+
+    damage(amount) {
+        const dead = this.health.damage(amount);
+
+        if (dead) {
+            this.die();
+        }
+    }
+
+    die() {
+        this.alive = false;
+        this.scene.remove(this.mesh);
+    }
+
+    // ===============================
+    // UPDATE
+    // ===============================
+
     update(delta) {
-        const direction = new THREE.Vector3()
+        if (!this.alive) return;
+
+        const dir = new THREE.Vector3()
             .subVectors(this.player.position, this.mesh.position);
 
-        const distance = direction.length();
+        const dist = dir.length();
 
-        if (distance > 1.5) {
-            direction.normalize();
+        // poursuivre le joueur
+        if (dist > 1.5) {
+            dir.normalize();
 
             this.mesh.position.add(
-                direction.multiplyScalar(this.speed * delta)
+                dir.multiplyScalar(this.speed * delta)
             );
 
-            // rotation vers le joueur
             this.mesh.lookAt(this.player.position);
         }
     }
