@@ -1,24 +1,23 @@
-// ===============================
-// Graphics Engine (Scene + World)
-// ===============================
+// ============================================
+// Graphics Engine (World + Player + Bots + Fight)
+// ============================================
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+
 import { PlayerMovement } from "../player/movement.js";
 import { Shooting } from "../player/shooting.js";
+import { BotManager } from "../bots/botManager.js";
 
 export class Graphics {
 
     constructor() {
-        this.clock = new THREE.Clock();
-
         this.initScene();
         this.createWorld();
         this.initPlayer();
+        this.initBots();
     }
 
-    // ===============================
-    // SCENE
-    // ===============================
+    // ================= SCENE =================
 
     initScene() {
         this.scene = new THREE.Scene();
@@ -36,33 +35,29 @@ export class Graphics {
 
         document.body.appendChild(this.renderer.domElement);
 
-        // Lumières
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(10, 20, 10);
-        this.scene.add(sun);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+        sun.position.set(10, 30, 10);
 
+        this.scene.add(sun);
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
         window.addEventListener("resize", () => this.onResize());
     }
 
-    // ===============================
-    // MAP
-    // ===============================
+    // ================= MAP =================
 
     createWorld() {
-        const floorGeo = new THREE.PlaneGeometry(200, 200);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(300, 300),
+            new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+        );
 
-        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
 
         this.scene.add(floor);
     }
 
-    // ===============================
-    // PLAYER
-    // ===============================
+    // ================= PLAYER =================
 
     initPlayer() {
         const geo = new THREE.BoxGeometry(1, 2, 1);
@@ -77,13 +72,21 @@ export class Graphics {
         this.shooting = new Shooting(this.scene, this.camera);
     }
 
-    // ===============================
-    // LOOP
-    // ===============================
+    // ================= BOTS =================
+
+    initBots() {
+        this.bots = new BotManager(this.scene, this.playerMesh);
+    }
+
+    // ================= LOOP =================
 
     update(delta) {
         this.playerMovement.update(delta);
         this.shooting.update(delta);
+        this.bots.update(delta);
+
+        // collisions balles ↔ bots
+        this.bots.checkHits(this.shooting.bullets.bullets);
     }
 
     render() {
