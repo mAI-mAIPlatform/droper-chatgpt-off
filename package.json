@@ -9,8 +9,5 @@
   "devDependencies": {
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3"
-  },
-  "scripts": {
-    "build": "electron-builder"
   }
 }
