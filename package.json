@@ -1,0 +1,10 @@
+{
+  "name": "fortnite-clone",
+  "version": "1.0.0",
+  "description": "Mini Fortnite solo avec bots - Three.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {}
+}
